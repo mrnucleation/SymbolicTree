@@ -20,6 +20,12 @@ class Expression():
             self.__depth = 0
         self.status = "branch"
     #--------------------------------------
+    def replace(self, newnodes):
+        '''
+        Swaps this node out for
+        '''
+        self.parent
+    #--------------------------------------
     def getdepth(self):
         return self.__depth
     #--------------------------------------
@@ -44,23 +50,58 @@ class Expression():
             outlineage = sorted(outlineage, key=lambda x:x.getdepth(), reverse=True)
 
         return outlineage
+    #--------------------------------------------------------
+    def getavalibleindicies(self):
+        '''
+         Checks this node's lineage for sumation/product variables
+
+        '''
+        lineage = self.getlineage()
+        indlist = []
+        for ancestor in lineage:
+            sumindicie = ancestor.getsumindicie()
+            if sumindicie is None:
+                continue
+            indlist.append(sumindicie)
+        return indlist
+    #--------------------------------------------------------
+    def getsumindicie(self):
+        '''
+         This simply returns any sumation/product indicie that is used
+         by this node.
+        '''
+        return None
+    #--------------------------------------------------------
+    def getfreeindicie(self):
+        '''
+         This function searches this node and all of its decendents
+         to find if there is a free indicie.  Where a free indicie
+         is one that does not have a matching sumation/product node. 
+        '''
+        return []
 
     #--------------------------------------
     def setinicieranges(self, indicierange):
         self.indicierange = indicierange
+    #--------------------------------------
+    def gettermcount(self):
+        return 1
 
 #============================================================
 class Sum(Expression):
     #--------------------------------------------------------
-    def __init__(self, sterm, indicie, parentNode=None):
+    def __init__(self, sterm=None, indicie="i", parentNode=None):
         Expression.__init__(self,parentNode)
-        self.val = val
         self.sumindicie = indicie
         self.sterm = sterm
 
     #--------------------------------------------------------
     def __str__(self):
         return "Sum_%s:(%s)"%(self.sumindicie, str(self.sterm))
+    #--------------------------------------------------------
+    def getsumindicie(self):
+        return self.sumindicie
+
     #--------------------------------------------------------
     def evaluate(self, indicies, coordval):
 
@@ -71,7 +112,7 @@ class Sum(Expression):
 
         lowI, highI = tuple(self.indicierange[self.sumindicie])
         sumval = 0.0
-        for iSum in range(lowI, highI):
+        for iSum in range(lowI, highI+1):
             newindicies[self.sumindicie] = iSum
             val = self.sterm.evaluate(newindicies, coordval)
             sumval += val
@@ -95,6 +136,10 @@ class Sum(Expression):
         '''
         indicies = self.sterm.getfreeindicie()
         return list(filter((self.sumindicie).__ne__, indicies))
+    #--------------------------------------------------------
+    def setterms(self, termlist):
+        self.sterm = termlist[0]
+
     #--------------------------------------------------------
 
 #============================================================
@@ -166,14 +211,20 @@ class SumVar(GeneralVar):
     def __init__(self, indicies=None, varname="x", parentNode=None):
         Expression.__init__(self,parentNode)
         self.indicies = indicies
-        self.__varname = varname+"_%s"%(''.join([str(x) for x in incidies]))
+        self.__varname = varname+"_%s"%('_'.join([str(x) for x in self.indicies]))
         self.status = "leaf"
     #--------------------------------------------------------
     def __str__(self):
         return self.__varname
     #--------------------------------------------------------
     def evaluate(self, indicies, coordval):
-        return coordval[self.__varname]
+        tempstr = self.__varname
+        for index in indicies:
+            if index in self.indicies:
+                val = indicies[index]
+                tempstr = tempstr.replace(index.strip(), str(indicies[index]))
+
+        return coordval[tempstr]
     #--------------------------------------------------------
     def getnodelist(self):
         return [self]
@@ -246,7 +297,8 @@ class TwoTermExpression(Expression):
         self.lterm.setinicieranges(indicierange)
         self.rterm.setinicieranges(indicierange)
     #--------------------------------------------------------
-
+    def gettermcount(self):
+        return 2
 #============================================================
 class Addition(TwoTermExpression):
     #--------------------------------------------------------

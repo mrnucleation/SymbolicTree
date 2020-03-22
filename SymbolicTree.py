@@ -1,7 +1,7 @@
 #from itertools import Combination
 
-from SymClass import Addition, Multiply, Division
-from SymClass import Constant, GeneralVar, DistVar
+from SymClass import Addition, Multiply, Division, Sum
+from SymClass import Constant, GeneralVar, DistVar, SumVar
 
 
 
@@ -13,13 +13,15 @@ class SymTree():
     #-----------------------------------------------------------
     def __init__(self):
         self.leaftypes = [Constant, GeneralVar]
-        self.headnode = Multiply()
+        self.headnode = Sum()
         self.indicielist = ["i"]
         self.indicieranges = {
-                            "i": [0.0, 2.0],
+                            "i": [0, 10],
                              }
-        termlist = [Constant(-10.5, parentNode=self.headnode), Constant(2.0, parentNode=self.headnode)]
+#        termlist = [GeneralVar(parentNode=self.headnode), Constant(2.0, parentNode=self.headnode)]
+        termlist = [SumVar(indicies=self.indicielist, parentNode=self.headnode)]
         self.headnode.setterms(termlist)
+        self.headnode.setinicieranges(self.indicieranges)
 
     #-----------------------------------------------------------
     def __str__(self):
@@ -31,9 +33,13 @@ class SymTree():
         if len(indicies) > 0:
             raise UnboundedIndicie("Sumation Index defined, but not used by a sumation node")
 
-        coordval = {
-                    "x": 2.0,
-                   }
+        coordval = {}
+        iLow, iHigh = tuple(self.indicieranges["i"])
+        for i in range(iLow, iHigh+1):
+            coordval["x_%s"%(i)] = i
+
+#        for key in coordval:
+#            print(key, coordval[key])
         indicies = {}
 
 
